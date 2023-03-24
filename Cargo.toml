@@ -4,11 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
+# Buscar libreria de serialización y desarialización
 [dependencies]
 walkdir = "2.3"
 rust-crypto = "0.2"
 byteorder = "1.4"
 tokio = { version = "1", features = ["full"] }
-sqlx = { version = "0.5.13", default-features = false, features = ["macros", "postgres", "offline", "migrate", "uuid", "time","bigdecimal"] }
-walkdir = "2"
