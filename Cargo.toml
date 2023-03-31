@@ -7,7 +7,5 @@ edition = "2021"
 # Buscar libreria de serialización y desarialización
 [dependencies]
 walkdir = "2.3"
-rust-crypto = "0.2"
 byteorder = "1.4"
-tokio = { version = "1", features = ["full"] }
 zip = "0.5.7"
