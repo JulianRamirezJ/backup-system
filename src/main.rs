@@ -16,6 +16,7 @@ use std::result::Result;
 use zip::write::FileOptions;
 use std::io::{BufReader, BufWriter, Read, Write};
 use zip::{ZipArchive, ZipWriter,result::ZipError};
+use serde_json::json;
 
 
 mod models;
@@ -36,7 +37,7 @@ fn main()  -> Result<(), std::io::Error>
                 match create_tarball(&input_folder, &output_folder) {
                     Ok(output_file_path) => {
                         println!("Tarball created successfully. Output file path: {}", output_file_path);
-                        match split_file(&output_file_path, 30 * 1024 * 1024) {
+                        match split_file(&output_file_path, 30 * 1024 * 1024,pass.clone()) {
                             Ok(_) => Ok(()),
                             Err(err) => {
                                 println!("Split failed with error: {}", err);
@@ -182,13 +183,16 @@ fn decompress(input_folder: &String, output_folder: &String) -> std::io::Result<
     Ok(())
 }
 
-fn split_file(output_folder: &String, chunk_size: usize) -> Result<(), std::io::Error> {
+fn split_file(output_folder: &String, chunk_size: usize, pass: String) -> Result<(), std::io::Error> {
     let mut input_file = File::open(&output_folder.clone())?;
+    let input_file_path = Path::new(output_folder);
     let mut buffer = [0; 1024];
     let mut chunk_number = 1;
+    let mut split_files = Vec::new();
 
     loop {
         let output_file_path = format!("{}_part{}", output_folder, chunk_number);
+        let output_file_path_ = Path::new(&output_file_path);
         let mut output_file = File::create(&output_file_path)?;
 
         let mut bytes_written = 0;
@@ -209,7 +213,22 @@ fn split_file(output_folder: &String, chunk_size: usize) -> Result<(), std::io::
             break;
         }
         chunk_number += 1;
+        let file_name = output_file_path_.file_name().unwrap().to_str().unwrap().to_owned();
+        split_files.push(file_name);
     }
+
+    let path = input_file_path.parent().unwrap().to_str().unwrap();
+    let json_data = json!({
+        "input_folder": path,
+        "chunk_size": chunk_size,
+        "split_files": split_files,
+        "password":pass
+    });
+    let parent = input_file_path.parent().unwrap().file_name().unwrap().to_str().unwrap();
+    println!("{}",parent);
+    let json_file_path = format!("{}/{}.json","/home/julianramirezj/backup-system/info",parent);
+    let mut json_file = File::create(json_file_path)?;
+    serde_json::to_writer_pretty(&mut json_file, &json_data)?;
 
     Ok(())
 }

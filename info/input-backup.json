@@ -1,0 +1,10 @@
+{
+  "chunk_size": 31457280,
+  "input_file": "/home/julianramirezj/backup-system/backup/input-backup",
+  "password": "pass",
+  "split_files": [
+    "input-backup.tar_part1",
+    "input-backup.tar_part2",
+    "input-backup.tar_part3"
+  ]
+}
