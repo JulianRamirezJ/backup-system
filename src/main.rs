@@ -16,11 +16,21 @@ use std::result::Result;
 use zip::write::FileOptions;
 use std::io::{BufReader, BufWriter, Read, Write};
 use zip::{ZipArchive, ZipWriter,result::ZipError};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 
 mod models;
 
+
+#[derive(Deserialize, Serialize)]
+struct BackupInfo {
+    input_folder: String,
+    output_file: String,
+    chunk_size: usize,
+    split_files: Vec<String>,
+    password: String,
+}
 
 fn main()  -> Result<(), std::io::Error>
 {
@@ -52,15 +62,20 @@ fn main()  -> Result<(), std::io::Error>
                 }
             },
             "rb" => {
-                match restore_from_tarball(&input_folder, &output_folder) {
+                match reassemble_tar_file(input_folder){
                     Ok(_) => {
-                        println!("{}","Restored sucessfully");
-                        Ok(())
+                        match restore_from_tarball(&input_folder, &output_folder) {
+                            Ok(_) => {
+                                println!("{}","Restored sucessfully");
+                                Ok(())
+                            },
+                            Err(err) => {
+                                println!("Restore failed with error: {}", err);
+                                Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, ""))
+                            }
+                        }
                     },
-                    Err(err) => {
-                        println!("Restore failed with error: {}", err);
-                        Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, ""))
-                    }
+                    Err(err) => Err(err)
                 }
             },
             _ => {
@@ -126,63 +141,6 @@ fn restore_from_tarball(input_folder: &String, output_folder: &String) -> Result
     Ok(())
 }
 
-
-fn compress(input_folder: &String, output_folder: &String) -> Result<String, std::io::Error>
-{
-    let last_folder_name = Path::new(input_folder)
-            .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("");
-
-    let output_file = format!("{}/{}/{}.{}", output_folder, last_folder_name, last_folder_name, "zip");
-    let compressed_folder = format!("{}/{}", output_folder, last_folder_name);
-    let output_dir = Path::new(&compressed_folder);
-
-    if !output_dir.exists() {
-        fs::create_dir_all(output_dir)?;
-    }else{
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Folder Already Backuped"));
-    }
-    
-    let file = File::create(output_file)?;
-    let mut zip = ZipWriter::new(BufWriter::new(file));
-
-    let options = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
-    for entry in fs::read_dir(input_folder)? {
-        let path = entry?.path();
-        let mut file = File::open(&path)?;
-        let mut contents = Vec::new();
-        file.read_to_end(&mut contents)?;
-        let name = path.file_name().unwrap().to_str().unwrap();
-        zip.start_file(name, options)?;
-        zip.write_all(&contents)?;use std::error::Error;
-    }
-    zip.finish()?;
-    Ok(compressed_folder)
-}
-
-fn decompress(input_folder: &String, output_folder: &String) -> std::io::Result<()>
-{
-    let last_folder_name = Path::new(input_folder)
-            .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("");
-
-    let input_file = format!("{}/{}.{}", input_folder, last_folder_name, "zip");
-
-    let file = File::open(input_file)?;
-    let mut archive = ZipArchive::new(file)?;
-
-    for i in 0..archive.len() {
-        let mut file = archive.by_index(i)?;
-        let output_path = format!("{}/{}", output_folder, file.name());
-        let mut output_file = File::create(&output_path)?;
-        std::io::copy(&mut file, &mut output_file)?;
-    }
-
-    Ok(())
-}
-
 fn split_file(output_folder: &String, chunk_size: usize, pass: String) -> Result<(), std::io::Error> {
     let mut input_file = File::open(&output_folder.clone())?;
     let input_file_path = Path::new(output_folder);
@@ -220,6 +178,7 @@ fn split_file(output_folder: &String, chunk_size: usize, pass: String) -> Result
     let path = input_file_path.parent().unwrap().to_str().unwrap();
     let json_data = json!({
         "input_folder": path,
+        "output_file": output_folder,
         "chunk_size": chunk_size,
         "split_files": split_files,
         "password":pass
@@ -230,5 +189,33 @@ fn split_file(output_folder: &String, chunk_size: usize, pass: String) -> Result
     let mut json_file = File::create(json_file_path)?;
     serde_json::to_writer_pretty(&mut json_file, &json_data)?;
 
+    Ok(())
+}
+
+fn reassemble_tar_file(path: &String) -> io::Result<()> {
+
+    let input_path = Path::new(path);
+    let file_name = input_path.file_name().unwrap().to_str().unwrap();
+    println!("{}",file_name);
+    let info_file_path = format!("{}/{}.json","/home/julianramirezj/backup-system/info",file_name);
+    println!("{}",info_file_path);
+    let info_file = File::open(info_file_path)?;
+    let info: BackupInfo = serde_json::from_reader(info_file)?;
+    let output_file_path = Path::new(&info.output_file);
+    let mut output_file = File::create(&output_file_path)?;
+    for split_file in info.split_files {
+        let split_file_path = format!("{}/{}",info.input_folder.clone(), split_file);
+        println!("{}",split_file_path);
+        let mut input_file = File::open(&split_file_path)?;
+        let mut buffer = [0; 1024];
+        loop {
+            let bytes = input_file.read(&mut buffer)?;
+            if bytes == 0 {
+                break;
+            }
+            output_file.write_all(&buffer[..bytes])?;
+        }
+        fs::remove_file(&split_file_path)?;
+    }
     Ok(())
 }
