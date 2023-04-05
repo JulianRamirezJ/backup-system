@@ -7,6 +7,7 @@
 use std::result::Result;
 use openssl::hash::{MessageDigest};
 use openssl::pkcs5::pbkdf2_hmac;
+use std::path::{Path};
 
 
 
@@ -25,13 +26,14 @@ fn main()  -> Result<(), std::io::Error>
         let output_folder = &args[3];
         let pass = &args[4].to_string();
         let key = generate_key(pass.as_str());
+        let info_folder = get_info_folder();
 
         match mode.as_str() {
             "mb" => {
                 match create_tarball(&input_folder, &output_folder) {
                     Ok(output_file_path) => {
                         println!("Tarball created successfully. Output file path: {}", output_file_path);
-                        match split_file(&output_file_path, 30 * 1024 * 1024, pass.clone(), key.clone()) {
+                        match split_file(&output_file_path, 30 * 1024 * 1024, pass.clone(), key.clone(), info_folder) {
                             Ok(folder) => {
                                 println!("Files succesfully splitted");
                                 encrypt_folder(folder.as_str(), &key).unwrap();
@@ -51,9 +53,9 @@ fn main()  -> Result<(), std::io::Error>
                 }
             },
             "rb" => {
-                decrypt_folder(input_folder.clone().as_str(), pass.clone())?;
+                decrypt_folder(input_folder.clone().as_str(), pass.clone(), info_folder.clone())?;
                 println!("Files succesfully decrypted");
-                match reassemble_file(input_folder){
+                match reassemble_file(input_folder, info_folder.clone()){
                     Ok(_) => {
                         println!("Tarbal has been reassembled");
                         match restore_from_tarball(&input_folder, &output_folder) {
@@ -99,5 +101,15 @@ pub fn generate_key(password: &str) -> Vec<u8> {
     let salt = b"this-is-my-salt";
     pbkdf2_hmac(password.as_bytes(), salt, 1000, MessageDigest::sha256(), &mut key).unwrap();
     key
+}
+
+pub fn get_info_folder() -> String {
+    let current_dir = std::env::current_dir().unwrap();
+    let info_folder = current_dir.join("info");
+    if !info_folder.exists() {
+        std::fs::create_dir(&info_folder).unwrap();
+    }
+    let absolute_path = Path::new(&info_folder).canonicalize().unwrap();
+    absolute_path.to_str().unwrap().to_string()
 }
 

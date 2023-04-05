@@ -24,10 +24,10 @@ pub fn encrypt_folder(folder_path: &str, key: &[u8]) -> std::io::Result<()> {
         })
 }
 
-pub fn decrypt_folder(folder_path: &str, pass: String) -> std::io::Result<()> {
+pub fn decrypt_folder(folder_path: &str, pass: String, info_folder: String) -> std::io::Result<()> {
     let input_path = Path::new(folder_path);
     let file_name = input_path.file_name().unwrap().to_str().unwrap();
-    let info_file_path = format!("{}/{}.json","/home/julianramirezj/backup-system/info",file_name);
+    let info_file_path = format!("{}/{}.json",info_folder,file_name);
     let info_file = File::open(info_file_path)?;
     let info: BackupInfo = serde_json::from_reader(info_file)?;
     if pass == info.pass {

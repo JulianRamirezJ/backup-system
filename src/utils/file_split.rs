@@ -7,7 +7,9 @@ use serde_json;
 
 use super::backup_info::BackupInfo;
 
-pub fn split_file(output_folder: &String, chunk_size: usize, pass:String, key:Vec<u8>) -> Result<String, std::io::Error> {
+pub fn split_file(output_folder: &String, chunk_size: usize, pass:String, 
+                key:Vec<u8>, info_folder:String) 
+                -> Result<String, std::io::Error> {
     let mut input_file = File::open(&output_folder.clone())?;
     let input_file_path = Path::new(output_folder);
     let mut buffer = [0; 1024];
@@ -27,7 +29,6 @@ pub fn split_file(output_folder: &String, chunk_size: usize, pass:String, key:Ve
                 if bytes_written == 0 {
                     fs::remove_file(std::path::Path::new(&output_file_path)).unwrap();
                     fs::remove_file(std::path::Path::new(&output_folder.clone())).unwrap();
-
                 }
                 break;
             }
@@ -52,18 +53,17 @@ pub fn split_file(output_folder: &String, chunk_size: usize, pass:String, key:Ve
         key
     };
     let parent = input_file_path.parent().unwrap().file_name().unwrap().to_str().unwrap();
-    let json_file_path = format!("{}/{}.json","/home/julianramirezj/backup-system/info",parent);
+    let json_file_path = format!("{}/{}.json",info_folder,parent);
     let mut json_file = File::create(json_file_path)?;
     serde_json::to_writer_pretty(&mut json_file, &json_data)?;
 
     Ok(path.to_string())
 }
 
-pub fn reassemble_file(path: &String) -> io::Result<()> {
-
+pub fn reassemble_file(path: &String, info_folder:String) -> io::Result<()> {
     let input_path = Path::new(path);
     let file_name = input_path.file_name().unwrap().to_str().unwrap();
-    let info_file_path = format!("{}/{}.json","/home/julianramirezj/backup-system/info",file_name);
+    let info_file_path = format!("{}/{}.json",info_folder, file_name);
     let info_file = File::open(info_file_path)?;
     let info: BackupInfo = serde_json::from_reader(info_file)?;
     let output_file_path = Path::new(&info.output_file);
