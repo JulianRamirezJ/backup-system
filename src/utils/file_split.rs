@@ -66,7 +66,6 @@ pub fn reassemble_file(path: &String) -> io::Result<()> {
     let file_name = input_path.file_name().unwrap().to_str().unwrap();
     println!("{}",file_name);
     let info_file_path = format!("{}/{}.json","/home/julianramirezj/backup-system/info",file_name);
-    println!("{}",info_file_path);
     let info_file = File::open(info_file_path)?;
     let info: BackupInfo = serde_json::from_reader(info_file)?;
     let output_file_path = Path::new(&info.output_file);
@@ -83,6 +82,7 @@ pub fn reassemble_file(path: &String) -> io::Result<()> {
             }
             output_file.write_all(&buffer[..bytes])?;
         }
+        fs::remove_file(std::path::Path::new(&split_file_path)).unwrap();
     }
     Ok(())
 }

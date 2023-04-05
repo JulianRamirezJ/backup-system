@@ -5,7 +5,7 @@
 **/
 
 use std::result::Result;
-use openssl::hash::{hash, MessageDigest};
+use openssl::hash::{MessageDigest};
 use openssl::pkcs5::pbkdf2_hmac;
 
 
@@ -49,7 +49,7 @@ fn main()  -> Result<(), std::io::Error>
                 }
             },
             "rb" => {
-                decrypt(input_folder, pass)?;
+                decrypt_folder(input_folder.clone().as_str(), pass.clone())?;
                 match reassemble_file(input_folder){
                     Ok(_) => {
                         match restore_from_tarball(&input_folder, &output_folder) {

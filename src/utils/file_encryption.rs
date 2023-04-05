@@ -29,10 +29,10 @@ pub fn decrypt_folder(folder_path: &str, pass: String) -> std::io::Result<()> {
     let info_file = File::open(info_file_path)?;
     let info: BackupInfo = serde_json::from_reader(info_file)?;
     if pass == info.pass {
-        for entry in fs::read_dir(folder_path)? {
+        for entry in fs::read_dir(&info.input_folder)? {
             let entry = entry?;
             let path = entry.path();
-            decrypt_file(path.to_str().unwrap(), &info.key)?;
+            decrypt_file(path.to_str().unwrap(), info.input_folder.clone() ,&info.key)?;
         }
         Ok(())
     }else{
@@ -59,10 +59,11 @@ fn encrypt_file(file_path: &str, key: &[u8]) -> std::io::Result<()> {
     Ok(())
 }
 
-fn decrypt_file(file_path: &str, key: &[u8]) -> std::io::Result<()> {
+fn decrypt_file(file_path: &str, output_folder:String, key: &[u8]) -> std::io::Result<()> {
     let input_file_path = Path::new(file_path);
     let mut output_file_path = PathBuf::new();
     output_file_path.set_file_name(input_file_path.file_stem().unwrap());
+    let output_file = format!("{}/{}",output_folder,output_file_path.display());
     let mut file = File::open(input_file_path)?;
     let mut contents = Vec::new();
 
@@ -75,7 +76,7 @@ fn decrypt_file(file_path: &str, key: &[u8]) -> std::io::Result<()> {
     let final_count = decrypter.finalize(&mut plaintext[count..])?;
     
     plaintext.truncate(count + final_count);
-    let mut output_file = File::create(output_file_path)?;
+    let mut output_file = File::create(output_file)?;
     output_file.write_all(&plaintext)?;
     
     Ok(())
