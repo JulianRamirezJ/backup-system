@@ -1,11 +1,29 @@
 {
-  "chunk_size": 31457280,
   "input_folder": "/home/julianramirezj/backup-system/backup/input-backup",
   "output_file": "/home/julianramirezj/backup-system/backup/input-backup/input-backup.tar",
-  "password": "pass",
+  "chunk_size": 31457280,
   "split_files": [
     "input-backup.tar_part1",
     "input-backup.tar_part2",
     "input-backup.tar_part3"
+  ],
+  "pass": "secret",
+  "key": [
+    45,
+    67,
+    97,
+    118,
+    10,
+    27,
+    95,
+    57,
+    21,
+    253,
+    39,
+    211,
+    153,
+    97,
+    178,
+    212
   ]
 }
