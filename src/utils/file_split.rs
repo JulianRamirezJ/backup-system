@@ -52,7 +52,6 @@ pub fn split_file(output_folder: &String, chunk_size: usize, pass:String, key:Ve
         key
     };
     let parent = input_file_path.parent().unwrap().file_name().unwrap().to_str().unwrap();
-    println!("{}",parent);
     let json_file_path = format!("{}/{}.json","/home/julianramirezj/backup-system/info",parent);
     let mut json_file = File::create(json_file_path)?;
     serde_json::to_writer_pretty(&mut json_file, &json_data)?;
@@ -64,7 +63,6 @@ pub fn reassemble_file(path: &String) -> io::Result<()> {
 
     let input_path = Path::new(path);
     let file_name = input_path.file_name().unwrap().to_str().unwrap();
-    println!("{}",file_name);
     let info_file_path = format!("{}/{}.json","/home/julianramirezj/backup-system/info",file_name);
     let info_file = File::open(info_file_path)?;
     let info: BackupInfo = serde_json::from_reader(info_file)?;
@@ -72,7 +70,6 @@ pub fn reassemble_file(path: &String) -> io::Result<()> {
     let mut output_file = File::create(&output_file_path)?;
     for split_file in info.split_files {
         let split_file_path = format!("{}/{}",info.input_folder.clone(), split_file);
-        println!("{}",split_file_path);
         let mut input_file = File::open(&split_file_path)?;
         let mut buffer = [0; 1024];
         loop {

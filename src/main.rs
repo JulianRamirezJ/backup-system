@@ -33,7 +33,9 @@ fn main()  -> Result<(), std::io::Error>
                         println!("Tarball created successfully. Output file path: {}", output_file_path);
                         match split_file(&output_file_path, 30 * 1024 * 1024, pass.clone(), key.clone()) {
                             Ok(folder) => {
+                                println!("Files succesfully splitted");
                                 encrypt_folder(folder.as_str(), &key).unwrap();
+                                println!("Files succesfully encrypted");
                                 Ok(())
                             },
                             Err(err) => {
@@ -50,11 +52,13 @@ fn main()  -> Result<(), std::io::Error>
             },
             "rb" => {
                 decrypt_folder(input_folder.clone().as_str(), pass.clone())?;
+                println!("Files succesfully decrypted");
                 match reassemble_file(input_folder){
                     Ok(_) => {
+                        println!("Tarbal has been reassembled");
                         match restore_from_tarball(&input_folder, &output_folder) {
                             Ok(_) => {
-                                println!("{}","Restored sucessfully");
+                                println!("{}:{}","Restored sucessfully",output_folder);
                                 Ok(())
                             },
                             Err(err) => {

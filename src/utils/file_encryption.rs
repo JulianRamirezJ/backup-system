@@ -2,9 +2,10 @@ extern crate openssl;
 
 use std::fs;
 use openssl::symm::{Cipher, Crypter, Mode};
-use std::fs::{File, OpenOptions};
+use std::fs::{File};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use rayon::prelude::*;
 use serde_json;
 
 use super::backup_info::BackupInfo;
@@ -13,13 +14,14 @@ use super::backup_info::BackupInfo;
 static IV: [u8; 16] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
 pub fn encrypt_folder(folder_path: &str, key: &[u8]) -> std::io::Result<()> {
-    for entry in fs::read_dir(folder_path)? {
-        let entry = entry?;
-        let path = entry.path();
-        encrypt_file(path.to_str().unwrap(), key)?;
-        fs::remove_file(std::path::Path::new(&path)).unwrap();
-    }
-    Ok(())
+    let files: Vec<_> = fs::read_dir(&folder_path)?.collect();
+    files.par_iter()
+        .try_for_each(|entry| -> std::io::Result<()> {
+            let path = entry.as_ref().unwrap().path();
+            encrypt_file(path.to_str().unwrap(), key)?;
+            fs::remove_file(&path)?;
+            Ok(())
+        })
 }
 
 pub fn decrypt_folder(folder_path: &str, pass: String) -> std::io::Result<()> {
@@ -29,16 +31,17 @@ pub fn decrypt_folder(folder_path: &str, pass: String) -> std::io::Result<()> {
     let info_file = File::open(info_file_path)?;
     let info: BackupInfo = serde_json::from_reader(info_file)?;
     if pass == info.pass {
-        for entry in fs::read_dir(&info.input_folder)? {
-            let entry = entry?;
-            let path = entry.path();
-            decrypt_file(path.to_str().unwrap(), info.input_folder.clone() ,&info.key)?;
-        }
-        Ok(())
+        let files: Vec<_> = fs::read_dir(&info.input_folder)?.collect();
+            files.par_iter()
+            .try_for_each(|entry| -> std::io::Result<()> {
+                let path = entry.as_ref().unwrap().path();
+                decrypt_file(path.to_str().unwrap(), info.input_folder.clone(), &info.key)?;
+                fs::remove_file(&path)?;
+                Ok(())
+            })
     }else{
         Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Something wrong"))
     }
-
 }
 
 fn encrypt_file(file_path: &str, key: &[u8]) -> std::io::Result<()> {
