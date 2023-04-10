@@ -36,7 +36,6 @@ pub fn decrypt_folder(folder_path: &str, pass: String, info_folder: String) -> s
             .try_for_each(|entry| -> std::io::Result<()> {
                 let path = entry.as_ref().unwrap().path();
                 decrypt_file(path.to_str().unwrap(), info.input_folder.clone(), &info.key)?;
-                fs::remove_file(&path)?;
                 Ok(())
             })
     }else{
