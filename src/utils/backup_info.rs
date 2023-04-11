@@ -9,3 +9,4 @@ pub(crate) struct BackupInfo {
     pub(crate) pass: String,
     pub(crate) key: Vec<u8>
 }
+
