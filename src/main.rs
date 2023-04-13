@@ -1,7 +1,8 @@
 /**
     Main program - Backup System
     Julian Andres Ramirez Jimenez
-    Basic Directory for tests : /home/julianramirezj/backup-system/backup-folder/
+    Basic Directory backup save test : /home/julianramirezj/backup-system-api/backup/
+    Basic Directory backup restore test : /home/julianramirezj/output-backup
 **/
 
 use std::result::Result;
@@ -27,7 +28,6 @@ struct BackupRequest {
 
 #[post("/backup/create", format = "json", data = "<request>")]
 fn create_backup(request: Json<BackupRequest>) -> Result<Json<Value>, (Status, String)>{
-
     let input_folder = request.input_folder.clone();
     let output_folder = request.output_folder.clone();
     let pass = request.pass.clone().to_string();
@@ -37,7 +37,7 @@ fn create_backup(request: Json<BackupRequest>) -> Result<Json<Value>, (Status, S
     match create_tarball(&input_folder, &output_folder) {
         Ok(output_file_path) => {
             println!("Tarball created successfully. Output file path: {}", output_file_path);
-            match split_file(&output_file_path, 30 * 1024 * 1024, pass.clone(), key.clone(), info_folder) {
+            match split_file(&output_file_path, 50 * 1000 * 1000, pass.clone(), key.clone(), info_folder) {
                 Ok(folder) => {
                     println!("Files succesfully splitted");
                     encrypt_folder(folder.as_str(), &key).unwrap();
@@ -101,7 +101,6 @@ async fn main() {
         .launch()
         .await;
 }
-
 
 pub fn generate_key(password: &str) -> Vec<u8> {
     let mut key = vec![0; 16];
