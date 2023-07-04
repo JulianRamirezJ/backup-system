@@ -29,16 +29,22 @@ Para esto basta con correr el comando :
               cargo build
            
  Y finalmente puede proceder a correr el programa. 
+
+              cargo run --release
  Este programa tiene dos modos para ejecutarse que son: Crear Backup y Restaurar de Backup. 
  
  
- Para crear un backup ejecute:
+ Para crear un backup ejecute en una terminal o cliente tipo postman:
  
-               cargo run mb {/input-dir/} {/backup-dir/} {pass} --release
+               
+    REQUEST='{"input_folder":"/home/julianramirezj/input-backup-2","output_folder":"/home/julianramirezj/backup-system-api/backup","pass":"secret"}'
+    curl -v -i -X POST -H 'Content-Type: application/json' 'http://127.0.0.1:8000/backup/create' -d "${REQUEST}"
               
-  Para restaurar un backup ejecute
+  Para restaurar un backup ejecute en una terminal o cliente tipo postman:
               
-            cargo run rb {/backup-dir/} {/output-dir/} {pass} --release
+            
+    REQUEST='{"input_folder":"/home/julianramirezj/backup-system-api/backup/input-backup-2","output_folder":"/home/julianramirezj/output-backup","pass":"secret"}'
+    curl -v -i -X POST -H 'Content-Type: application/json' 'http://127.0.0.1:8000/backup/restore' -d "${REQUEST}"
             
   Recuerde que todos los directorios se deben pasar como rutas absolutas.
   
