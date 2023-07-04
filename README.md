@@ -48,6 +48,6 @@ Para esto basta con correr el comando :
             
   Recuerde que todos los directorios se deben pasar como rutas absolutas.
   
- En el directorio raiz del proyecto hay dos archivos bash ('run-backup.sh' y 'run-restore.sh'), puede basarse en ellos como ejemplo para
+ En el directorio raiz del proyecto hay dos archivos bash ('basic-create.sh' y 'basic-restore.sh'), puede basarse en ellos como ejemplo para
  ejecutar el programa.
  
